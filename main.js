@@ -1,259 +1,192 @@
-'use strict';
+/*
+THIS IS A COMPILED VERSION FOR DIRECT USE.
+Place this in .obsidian/plugins/canvas-node-window/main.js
+*/
 
-var obsidian = require('obsidian');
+const obsidian = require('obsidian');
 
-class CanvasFocusPlugin extends obsidian.Plugin {
+const DEFAULT_SETTINGS = {
+    enabled: true,
+    pinnedByDefault: true,
+    focusOnOpen: false,
+    savedLeafId: null
+};
+
+class CanvasNodeWindowPlugin extends obsidian.Plugin {
     constructor() {
         super(...arguments);
-        this.currentCanvas = null;
-        this.focusLeafId = null;
-        this.lastSelection = null;
-        this.pollInterval = null;
-        this.isEnabled = true; // Track if plugin is active
-        this.windowWasClosed = false; // Track if user manually closed the window
+        this.nodeLeaf = null;
     }
-    
+
     async onload() {
-        console.log('Loading Canvas Focus Window plugin');
-        
-        // Add command to toggle the plugin on/off
-        this.addCommand({
-            id: 'toggle-canvas-focus',
-            name: 'Toggle Canvas Focus Window',
-            callback: () => {
-                this.isEnabled = !this.isEnabled;
-                const status = this.isEnabled ? 'enabled' : 'disabled';
-                new obsidian.Notice(`Canvas Focus Window ${status}`);
-                console.log(`Canvas Focus Window ${status}`);
-                
-                // If disabling, close the window and cleanup
-                if (!this.isEnabled) {
-                    this.closeWindow();
-                    this.cleanup();
-                } else {
-                    // If enabling, restart monitoring if we're on a canvas
-                    const activeLeaf = this.app.workspace.activeLeaf;
-                    if (activeLeaf) {
-                        this.setupCanvasListener(activeLeaf);
-                    }
-                }
-            }
+        await this.loadSettings();
+        this.addSettingTab(new CanvasNodeWindowSettingTab(this.app, this));
+
+        this.app.workspace.onLayoutReady(() => {
+            this.recoverNodeLeaf();
         });
         
-        // Register an event for when the active leaf (tab) changes
-        this.registerEvent(
-            this.app.workspace.on('active-leaf-change', (leaf) => {
-                if (this.isEnabled) {
-                    this.setupCanvasListener(leaf);
-                }
-            })
-        );
-        
-        // Monitor when windows are closed
-        this.registerEvent(
-            this.app.workspace.on('window-close', (win) => {
-                // Check if the closed window was our focus window
-                if (this.focusLeafId) {
-                    const focusLeaf = this.app.workspace.getLeafById(this.focusLeafId);
-                    if (!focusLeaf) {
-                        // Our window was closed
-                        console.log('Focus window was closed by user');
-                        this.windowWasClosed = true;
-                        this.focusLeafId = null;
-                    }
-                }
-            })
-        );
-        
-        // Also set up listener for currently active leaf on load
-        const activeLeaf = this.app.workspace.activeLeaf;
-        if (activeLeaf && this.isEnabled) {
-            this.setupCanvasListener(activeLeaf);
-        }
-    }
-    
-    setupCanvasListener(leaf) {
-        // Clean up any old polling first
-        this.cleanup();
+        this.registerWindowListeners(window);
+        this.registerEvent(this.app.workspace.on('window-open', (win) => {
+            this.registerWindowListeners(win.win);
+        }));
 
-        // Check if the new active leaf is a canvas
-        if (leaf?.view?.getViewType() === 'canvas') {
-            const canvasView = leaf.view;
-            
-            // Wait a bit for the canvas to be ready
-            setTimeout(() => {
-                if (canvasView.canvas) {
-                    this.currentCanvas = canvasView.canvas;
-                    console.log('Canvas detected, starting selection monitor');
-                    
-                    // Start polling for selection changes
-                    this.pollInterval = this.registerInterval(
-                        window.setInterval(() => {
-                            this.checkSelection();
-                        }, 300)
-                    );
-                } else {
-                    console.log('Canvas view found but canvas object not ready');
-                }
-            }, 100);
-        }
-    }
-    
-    cleanup() {
-        if (this.pollInterval) {
-            window.clearInterval(this.pollInterval);
-            this.pollInterval = null;
-        }
-        this.currentCanvas = null;
-        this.lastSelection = null;
-    }
-    
-    closeWindow() {
-        if (this.focusLeafId) {
-            const focusLeaf = this.app.workspace.getLeafById(this.focusLeafId);
-            if (focusLeaf) {
-                focusLeaf.detach();
+        this.addCommand({
+            id: 'toggle-canvas-node-window',
+            name: 'Toggle Node Window',
+            callback: () => {
+                this.settings.enabled = !this.settings.enabled;
+                this.saveSettings();
             }
-            this.focusLeafId = null;
+        });
+    }
+
+    async recoverNodeLeaf() {
+        if (this.settings.savedLeafId) {
+            const existingLeaf = this.app.workspace.getLeafById(this.settings.savedLeafId);
+            if (existingLeaf) {
+                this.nodeLeaf = existingLeaf;
+                this.styleNodeLeaf(this.nodeLeaf);
+            } else {
+                this.settings.savedLeafId = null;
+                this.saveSettings();
+            }
         }
     }
-    
-    checkSelection() {
-        if (!this.isEnabled || !this.currentCanvas || !this.currentCanvas.selection) {
+
+    registerWindowListeners(win) {
+        this.registerDomEvent(win.document, 'mouseup', (evt) => {
+            if (!this.settings.enabled) return;
+            // Optimization: Early exit if not clicking a canvas node
+            if (!evt.target.closest('.canvas-node')) return;
+            
+            this.handleCanvasClick(evt);
+        });
+    }
+
+    async handleCanvasClick(evt) {
+        const activeLeaf = this.app.workspace.activeLeaf;
+        if (!activeLeaf || activeLeaf.view.getViewType() !== 'canvas') return;
+        
+        // Small delay still needed for Obsidian selection state to update
+        setTimeout(() => this.processCanvasSelection(activeLeaf.view), 50);
+    }
+
+    async processCanvasSelection(canvasView) {
+        if (!canvasView.canvas || !canvasView.canvas.selection) return;
+        const selection = canvasView.canvas.selection;
+        if (selection.size === 0) return;
+
+        const node = selection.values().next().value;
+        if (!node || !node.file || !(node.file instanceof obsidian.TFile)) return;
+
+        await this.openInNodeLeaf(node.file);
+    }
+
+    async openInNodeLeaf(file) {
+        // Validate existing leaf
+        if (this.nodeLeaf && !this.app.workspace.getLeafById(this.nodeLeaf.id)) {
+            this.nodeLeaf = null;
+        }
+
+        let isNewLeaf = false;
+
+        // Create if missing
+        if (!this.nodeLeaf) {
+            this.nodeLeaf = this.app.workspace.getLeaf('split', 'vertical');
+            isNewLeaf = true;
+            if (this.settings.pinnedByDefault) {
+                this.nodeLeaf.setPinned(true);
+            }
+        }
+
+        // Optimization: Only write to disk if ID actually changed
+        if (this.settings.savedLeafId !== this.nodeLeaf.id) {
+            this.settings.savedLeafId = this.nodeLeaf.id;
+            await this.saveSettings();
+        }
+
+        // Optimization: Don't reload if it's already the open file
+        const currentFile = this.nodeLeaf.view.file;
+        if (!isNewLeaf && currentFile && currentFile.path === file.path) {
+            if (this.settings.focusOnOpen) {
+                this.app.workspace.setActiveLeaf(this.nodeLeaf, { focus: true });
+            }
             return;
         }
+
+        await this.nodeLeaf.openFile(file, { active: this.settings.focusOnOpen });
         
-        const selection = this.currentCanvas.selection;
-        
-        // Get the selected nodes
-        let selectedNodes = [];
-        
-        if (selection instanceof Set) {
-            selectedNodes = Array.from(selection);
-        } else if (selection.size !== undefined) {
-            // It's a Set-like object
-            selectedNodes = Array.from(selection);
-        } else if (Array.isArray(selection)) {
-            selectedNodes = selection;
-        }
-        
-        // Check if exactly one node is selected
-        if (selectedNodes.length !== 1) {
-            this.lastSelection = null;
-            return;
-        }
-        
-        const node = selectedNodes[0];
-        
-        // Check if this is a new selection (avoid processing the same node repeatedly)
-        const nodeId = node.id || node.file;
-        if (this.lastSelection === nodeId) {
-            return;
-        }
-        
-        // This is a new selection - clear the "window was closed" flag
-        this.windowWasClosed = false;
-        this.lastSelection = nodeId;
-        console.log('New node selected:', node);
-        
-        // Process the selection
-        this.processSelection(node);
+        this.styleNodeLeaf(this.nodeLeaf);
     }
-    
-    async processSelection(node) {
-        try {
-            // If user closed the window manually, don't reopen until new selection
-            // (this check happens after lastSelection changes, so new nodes will work)
-            if (this.windowWasClosed) {
-                console.log('Window was closed by user, skipping reopen');
-                return;
-            }
-            
-            // Log the full node to understand its structure
-            console.log('Node structure:', {
-                type: node.type,
-                file: node.file,
-                filePath: node.filePath,
-                allKeys: Object.keys(node)
-            });
-            
-            // Check if it's a file node - try different property names
-            const isFileNode = node.type === 'file' || 
-                              node.file !== undefined || 
-                              node.filePath !== undefined;
-            
-            if (!isFileNode) {
-                console.log('Not a file node');
-                return;
-            }
-            
-            // Get the file path - try multiple possible properties
-            let filePath = null;
-            
-            if (node.file) {
-                if (typeof node.file === 'string') {
-                    filePath = node.file;
-                } else if (node.file.path) {
-                    filePath = node.file.path;
-                } else if (node.file.name) {
-                    filePath = node.file.name;
-                }
-            }
-            
-            if (!filePath && node.filePath) {
-                filePath = node.filePath;
-            }
-            
-            if (!filePath) {
-                console.log('No file path found for node. Node keys:', Object.keys(node));
-                return;
-            }
-            
-            console.log('Opening file:', filePath);
-            
-            // Get the TFile object from the vault
-            const file = this.app.vault.getAbstractFileByPath(filePath);
-            if (!(file instanceof obsidian.TFile)) {
-                console.log('File not found in vault:', filePath);
-                return;
-            }
-            
-            // Find or create our pop-out window
-            let focusLeaf = null;
-            
-            // Try to find our existing pop-out leaf
-            if (this.focusLeafId) {
-                focusLeaf = this.app.workspace.getLeafById(this.focusLeafId);
-                if (focusLeaf) {
-                    console.log('Reusing existing pop-out window');
-                }
-            }
-            
-            // If we didn't find it, create a new one
-            if (!focusLeaf) {
-                console.log('Creating new pop-out window');
-                focusLeaf = this.app.workspace.openPopoutLeaf();
-                this.focusLeafId = focusLeaf.id;
-                this.windowWasClosed = false; // Reset flag when creating new window
-            }
-            
-            // Open the file in our focus leaf
-            await focusLeaf.openFile(file, { active: true });
-            
-            console.log('File opened successfully');
-            
-        } catch (e) {
-            console.error('Canvas Focus Plugin Error:', e);
-            // Reset the leaf ID if there was an error
-            this.focusLeafId = null;
+
+    styleNodeLeaf(leaf) {
+        if (!leaf) return;
+
+        if (leaf.tabHeaderEl) leaf.tabHeaderEl.addClass('canvas-node-window');
+        leaf.containerEl.addClass('canvas-node-window');
+
+        if (this.settings.pinnedByDefault && !leaf.pinned) {
+            leaf.setPinned(true);
         }
     }
-    
-    onunload() {
-        console.log('Unloading Canvas Focus Window plugin');
-        this.closeWindow();
-        this.cleanup();
+
+    async loadSettings() {
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    }
+
+    async saveSettings() {
+        await this.saveData(this.settings);
     }
 }
 
-module.exports = CanvasFocusPlugin;
+class CanvasNodeWindowSettingTab extends obsidian.PluginSettingTab {
+    constructor(app, plugin) {
+        super(app, plugin);
+        this.plugin = plugin;
+    }
+
+    display() {
+        const { containerEl } = this;
+        containerEl.empty();
+        containerEl.createEl('h2', { text: 'Canvas Node Window' });
+
+        new obsidian.Setting(containerEl)
+            .setName('Enable Plugin')
+            .addToggle(t => t.setValue(this.plugin.settings.enabled).onChange(async v => {
+                this.plugin.settings.enabled = v;
+                await this.plugin.saveSettings();
+            }));
+
+        new obsidian.Setting(containerEl)
+            .setName('Pin Tab by Default')
+            .setDesc('Keep the node window pinned?')
+            .addToggle(t => t.setValue(this.plugin.settings.pinnedByDefault).onChange(async v => {
+                this.plugin.settings.pinnedByDefault = v;
+                await this.plugin.saveSettings();
+            }));
+
+        new obsidian.Setting(containerEl)
+            .setName('Focus Node Window')
+            .setDesc('Focus the window immediately on click?')
+            .addToggle(t => t.setValue(this.plugin.settings.focusOnOpen).onChange(async v => {
+                this.plugin.settings.focusOnOpen = v;
+                await this.plugin.saveSettings();
+            }));
+            
+        new obsidian.Setting(containerEl)
+            .setName('Reset Connection')
+            .setDesc('Click this if the window isn\'t updating correctly.')
+            .addButton(btn => btn
+                .setButtonText('Reset ID')
+                .onClick(async () => {
+                    this.plugin.settings.savedLeafId = null;
+                    await this.plugin.saveSettings();
+                    this.plugin.nodeLeaf = null;
+                    btn.setButtonText('Reset!');
+                    setTimeout(() => btn.setButtonText('Reset ID'), 1000);
+                }));
+    }
+}
+
+module.exports = CanvasNodeWindowPlugin;

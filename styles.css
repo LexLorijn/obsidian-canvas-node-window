@@ -1,0 +1,31 @@
+/* 1. Target the pinned icon container in our specific window */
+.workspace-tab-header.canvas-node-window .workspace-tab-header-status-icon.mod-pinned {
+    position: relative;
+    opacity: 1 !important;
+}
+
+/* 2. Hide the original Pin SVG */
+.workspace-tab-header.canvas-node-window .workspace-tab-header-status-icon.mod-pinned svg {
+    display: none;
+}
+
+/* 3. Inject the Workflow Icon via CSS Mask */
+.workspace-tab-header.canvas-node-window .workspace-tab-header-status-icon.mod-pinned::after {
+    content: '';
+    display: block;
+    width: 16px;
+    height: 16px;
+    
+    /* The Lucide 'Workflow' SVG encoded as a data URI */
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='8' height='8' x='3' y='3' rx='2'/%3E%3Cpath d='M7 11v4a2 2 0 0 0 2 2h4'/%3E%3Crect width='8' height='8' x='13' y='13' rx='2'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='8' height='8' x='3' y='3' rx='2'/%3E%3Cpath d='M7 11v4a2 2 0 0 0 2 2h4'/%3E%3Crect width='8' height='8' x='13' y='13' rx='2'/%3E%3C/svg%3E");
+    
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+
+    background-color: var(--text-accent);
+}

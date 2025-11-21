@@ -1,10 +1,10 @@
 {
-  "id": "canvas-node-window",
-  "name": "Canvas Node Window",
-  "version": "1.0.0",
-  "minAppVersion": "1.1.9",
-  "description": "Automatically opens selected Canvas file nodes in a dedicated pop-out window for seamless side-by-side editing.",
-  "author": "LexLorijn",
-  "authorUrl": "https://github.com/LexLorijn",
-  "isDesktopOnly": true
+    "id": "canvas-node-window",
+    "name": "Canvas Node Window",
+    "version": "1.1.0",
+    "minAppVersion": "1.4.0",
+    "description": "Automatically opens selected Canvas nodes in a dedicated, movable window/tab.",
+    "author": "LexLorijn",
+    "authorUrl": "https://github.com/LexLorijn",
+    "isDesktopOnly": false
 }
