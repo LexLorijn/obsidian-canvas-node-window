@@ -23,7 +23,7 @@ When working with Canvas in Obsidian, this plugin automatically opens the select
 1. Install the BRAT plugin from the Obsidian Community Plugins browser.
 2. Open BRAT settings.
 3. Click "Add Beta plugin".
-4. Paste the URL of this repository: https://github.com/YOUR_USERNAME/canvas-node-window
+4. Paste the URL of this repository: https://github.com/LexLorijn/canvas-node-window
 5. Click "Add Plugin".
 
 ## Requirements
