@@ -1,7 +1,7 @@
 {
     "id": "canvas-node-window",
     "name": "Canvas Node Window",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "minAppVersion": "1.4.0",
     "description": "Automatically opens selected Canvas nodes in a dedicated, movable window/tab.",
     "author": "LexLorijn",

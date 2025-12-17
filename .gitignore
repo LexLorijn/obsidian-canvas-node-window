@@ -1,0 +1,8 @@
+node_modules
+.DS_Store
+.idea
+*.js.map
+data.json
+main.js
+package-lock.json
+releasenotes.md

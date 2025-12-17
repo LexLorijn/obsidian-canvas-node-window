@@ -1,43 +1,39 @@
 # Canvas Node Window
-Automatically opens Canvas file nodes in a dedicated pop-out tab for seamless side-by-side editing. Perfect for users who love working with Canvas but prefer editing nodes in a clean, dedicated window rather than within the Canvas itself.
 
-## Why use this plugin
-When working with Canvas in Obsidian, this plugin automatically opens the selected file node in a pop-out tab. This allows you to:
-- **Edit notes while viewing your Canvas** - Keep your Canvas visible on one screen while editing the selected note in another window.
-- **Focus on content** - Reduce context switching by having both your Canvas overview and detailed note content visible simultaneously.
-- **Streamline workflow** - Click any file node on your Canvas and instantly see it in a dedicated editing window, no need to manually open notes in a new window.
+**Seamlessly edit Canvas nodes in a dedicated side-by-side window.**
 
-### Features
-* Auto-Open Nodes: Clicking a file node (note) in the Canvas automatically opens it in a dedicated side window.
-* Persistent Window: The plugin tracks a specific window/tab (marked with a "Workflow" icon). You can move this tab anywhere (e.g., pop it out to a second monitor), and the plugin will keep updating it.
-* Optimized Performance: Only triggers when interacting with Canvas nodes.
+This plugin mirrors your currently selected Canvas node into a separate panel. It works with both **File Nodes** and **Text Cards**, allowing you to keep your Canvas overview clean while editing content in a focused workspace.
 
-## How to use
-1. Open any Canvas file in Obsidian
-2. Click on a file node (a note linked in your Canvas)
-3. The plugin automatically opens that file in a pop-out window
-4. Click different file nodes to switch what's displayed in the pop-out window
-5. The pop-out window stays open and updates as you select different nodes
+## Key Features
+
+* **Edit Anything:** Fully supports **Markdown Files** (`.md`) and **Text Cards** (via temporary bridge files).
+* **Two-Way Sync:** Typing in the node updates the window instantly, and vice-versa.
+* **Convert to File:** Easily turn a temporary text card into a permanent note with one click (or `Mod+Shift+F`).
+* **Media Preview:** View images, videos, PDFs, and audio files directly in the side panel.
+* **Multi-Monitor Workflow:** Pop the window out to a second screen; it stays linked to your Canvas selection.
+
+## Supported Formats
+* **Text:** Markdown (`.md`), Canvas Cards, JSON Canvas (`.canvas`)
+* **Images:** `.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp`, `.svg`, `.webp`
+* **Audio/Video:** `.mp3`, `.wav`, `.m4a`, `.mp4`, `.webm`, `.mkv`, `.mov`
+* **Documents:** `.pdf`
+
+## How to Use
+1.  Open a Canvas.
+2.  Click any node (File or Text Card).
+3.  The side window automatically opens and displays the content.
+4.  *(Optional)* If editing a Text Card, click **"Convert to File"** at the bottom of the pane to save it as a permanent note.
 
 ## Installation
-1. Install the BRAT plugin from the Obsidian Community Plugins browser.
-2. Open BRAT settings.
-3. Click "Add Beta plugin".
-4. Paste the URL of this repository: https://github.com/LexLorijn/canvas-node-window
-5. Click "Add Plugin".
-
-## Requirements
-- Obsidian v1.4.0 or higher
-- Desktop only (Test mobile at your own risk)
+1.  Install the **BRAT** plugin from the Community Plugins browser.
+2.  Open BRAT settings -> Click **"Add Beta Plugin"**.
+3.  Paste the repo URL: `https://github.com/LexLorijn/canvas-node-window`
+4.  Enable "Canvas Node Window" in your plugin settings.
 
 ## Support
-If you encounter any issues or have suggestions:
-- [Open an issue](https://github.com/Lexlorijn/obsidian-canvas-node-window/issues)
-- [Submit a pull request](https://github.com/Lexlorijn/obsidian-canvas-node-window/pulls)
+If you find this plugin helpful, consider supporting the development!
 
-## License
-MIT License - See LICENSE file for details
+[<img src="https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=flat&logo=buy-me-a-coffee&logoColor=black" height="28">](https://www.buymeacoffee.com/Lexlorijn) &nbsp; [<img src="https://img.shields.io/badge/Follow_on_GitHub-181717?style=flat&logo=github&logoColor=white" height="28">](https://github.com/LexLorijn)
 
-## Author
-Created by LexLorijn
-With <3 for Obsidian
+---
+**License:** MIT | **Author:** [LexLorijn](https://github.com/LexLorijn)
