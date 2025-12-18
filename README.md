@@ -4,6 +4,9 @@
 
 This plugin mirrors your currently selected Canvas node into a separate panel. It works with both **File Nodes** and **Text Cards**, allowing you to keep your Canvas overview clean while editing content in a focused workspace.
 
+## Video preview
+https://github.com/user-attachments/assets/b571d481-163f-4e89-bbbe-699a567b4cd3
+
 ## Key Features
 
 * **Edit Anything:** Fully supports **Markdown Files** (`.md`) and **Text Cards** (via temporary bridge files).
